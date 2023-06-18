@@ -1,5 +1,7 @@
 package com.hevlar.konney.infrastructure.entities;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.hevlar.konney.domain.entities.IJournal;
 import com.hevlar.konney.domain.valueobjects.ExpenseType;
 import com.hevlar.konney.domain.valueobjects.ActivityType;
@@ -26,5 +28,6 @@ public class Journal implements IJournal {
     ActivityType activityType;
     @ManyToOne
     @JoinColumn
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "label", scope = Book.class)
     Book book;
 }

@@ -6,8 +6,8 @@ import java.util.List;
 
 public interface IAccountService {
     List<Account> listAccounts(String label);
-    Account getAccount(String label, String accountId);
-    Account createAccount(String label, Account account) throws Exception;
-    Account updateAccount(String label, String accountId, Account account);
-    void deleteAccount(String label, String accountId);
+    Account getAccount(String label, String accountId) throws BookkeepingException;
+    Account createAccount(String label, Account account) throws BookkeepingException;
+    Account updateAccount(String label, String accountId, Account account) throws BookkeepingException;
+    void deleteAccount(String label, String accountId) throws BookkeepingException;
 }

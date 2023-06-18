@@ -1,5 +1,6 @@
 package com.hevlar.konney.presentation;
 
+import com.hevlar.konney.application.BookkeepingException;
 import com.hevlar.konney.application.IBookService;
 import com.hevlar.konney.infrastructure.entities.Book;
 import jakarta.validation.Valid;
@@ -23,9 +24,7 @@ public class BookController extends ValidationController{
     public Book update(@PathVariable("label") String label, @RequestBody @Valid Book book){
         try{
             return service.updateBook(label, book);
-        }catch (NoSuchElementException ex){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }catch (Exception ex){
+        }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }

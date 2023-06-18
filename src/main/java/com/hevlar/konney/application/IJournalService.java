@@ -5,9 +5,9 @@ import com.hevlar.konney.infrastructure.entities.Journal;
 import java.util.List;
 
 public interface IJournalService {
-    public List<Journal> listJournals();
-    public Journal getJournal(Long journalId);
-    public Journal createJournal(Journal journal);
-    public Journal updateJournal(Long journalId, Journal journal);
-    public void deleteJournal(Long journalId);
+    List<Journal> listJournals();
+    Journal getJournal(Long journalId) throws BookkeepingException;
+    Journal createJournal(Journal journal);
+    Journal updateJournal(Long journalId, Journal journal) throws BookkeepingException;
+    void deleteJournal(Long journalId) throws BookkeepingException;
 }

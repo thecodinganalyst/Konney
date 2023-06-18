@@ -6,8 +6,8 @@ import java.util.List;
 
 public interface IBookService {
     List<Book> listBooks();
-    Book getBook(String label);
+    Book getBook(String label) throws BookkeepingException;
     Book createBook(Book book);
-    Book updateBook(String label, Book book) throws Exception;
-    void deleteBook(String label) throws Exception;
+    Book updateBook(String label, Book book) throws BookkeepingException;
+    void deleteBook(String label) throws BookkeepingException;
 }

@@ -1,5 +1,7 @@
 package com.hevlar.konney.infrastructure.entities;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.hevlar.konney.domain.entities.IAccount;
 import com.hevlar.konney.domain.valueobjects.AccountGroup;
 import jakarta.persistence.Entity;
@@ -29,5 +31,6 @@ public class Account implements IAccount {
     BigDecimal openingBalance;
     @ManyToOne
     @JoinColumn
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "label", scope = Book.class)
     Book book;
 }
