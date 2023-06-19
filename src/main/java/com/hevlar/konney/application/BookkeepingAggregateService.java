@@ -37,7 +37,8 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
         return bookRepository.findById(label).orElseThrow(() -> new BookkeepingException("Book not found"));
     }
 
-    public Book createBook(Book book){
+    public Book createBook(Book book) throws BookkeepingException {
+        if(bookRepository.existsById(book.getLabel())) throw new BookkeepingException("Book with the same label already exists");
         return bookRepository.save(book);
     }
 

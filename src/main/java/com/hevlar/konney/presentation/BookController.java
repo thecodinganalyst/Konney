@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/books")
@@ -21,7 +20,7 @@ public class BookController extends ValidationController{
     }
 
     @PatchMapping("/{label}")
-    public Book update(@PathVariable("label") String label, @RequestBody @Valid Book book){
+    public Book update(@PathVariable("label") String label, @RequestBody Book book){
         try{
             return service.updateBook(label, book);
         }catch (BookkeepingException ex){
@@ -34,7 +33,7 @@ public class BookController extends ValidationController{
     public Book create(@RequestBody @Valid Book book){
         try{
             return service.createBook(book);
-        }catch (Exception ex){
+        }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
@@ -48,9 +47,7 @@ public class BookController extends ValidationController{
     public Book get(@PathVariable("label") String label){
         try{
             return service.getBook(label);
-        }catch (NoSuchElementException ex){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }catch (Exception ex){
+        }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }

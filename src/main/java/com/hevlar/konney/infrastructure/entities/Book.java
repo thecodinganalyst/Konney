@@ -4,12 +4,10 @@ import com.hevlar.konney.domain.entities.IBook;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -17,14 +15,15 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Book implements IBook {
+public class Book implements IBook{
     @Id
     String label;
     LocalDate startDate;
     LocalDate endDate;
+    @Builder.Default
     @OneToMany(mappedBy = "book")
-    List<Account> accountList;
+    List<Account> accountList = new ArrayList<>();
+    @Builder.Default
     @OneToMany(mappedBy = "book")
-    List<Journal> journalList;
-
+    List<Journal> journalList = new ArrayList<>();
 }
