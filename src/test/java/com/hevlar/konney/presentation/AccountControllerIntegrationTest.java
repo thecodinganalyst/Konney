@@ -271,6 +271,19 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<Acc
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
     }
 
+    @Test
+    @Order(13)
+    void update_givenInvalidAccountId_willReturnNotFound() throws Exception {
+        MvcResult result = put(cash, generateAccountsUrl("2022", "NONEXISTENTACCOUNTID"));
+        assertHttpStatus(result, HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @Order(14)
+    void update_givenJournalExists_willReturnBadRequest() throws Exception {
+        //TODO: add test
+    }
+
     private String generateAccountsUrl(String label, String accountId){
         return booksUrl + "/" + label + "/" + accountsUrl + "/" + accountId;
     }
