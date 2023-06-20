@@ -36,6 +36,14 @@ public class ControllerIntegrationTestBase<T> {
                 .andReturn();
     }
 
+    protected MvcResult postIfNotExist(T t, String postUrl, String getUrl) throws Exception {
+        MvcResult result = get(getUrl);
+        if(result.getResponse().getStatus() != HttpStatus.OK.value()){
+            return post(t, postUrl);
+        }
+        return null;
+    }
+
     protected MvcResult get(String url) throws Exception {
         return mvc.perform(MockMvcRequestBuilders.get(url)).andReturn();
     }
@@ -59,6 +67,7 @@ public class ControllerIntegrationTestBase<T> {
         ObjectReader reader = objectMapper.readerForListOf(classRef);
         return reader.readValue(result.getResponse().getContentAsString());
     }
+
 
 
 }

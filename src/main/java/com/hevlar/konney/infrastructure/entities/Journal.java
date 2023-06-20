@@ -7,6 +7,7 @@ import com.hevlar.konney.domain.valueobjects.ExpenseType;
 import com.hevlar.konney.domain.valueobjects.ActivityType;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +28,7 @@ public class Journal implements IJournal {
     ExpenseType expenseType;
     ActivityType activityType;
     @ManyToOne
+    @ToString.Exclude
     @JoinColumn
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "label", scope = Book.class)
     Book book;

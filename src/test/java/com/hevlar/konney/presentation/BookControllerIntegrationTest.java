@@ -1,6 +1,6 @@
 package com.hevlar.konney.presentation;
 
-import com.hevlar.konney.infrastructure.entities.Book;
+import com.hevlar.konney.presentation.dto.BookDto;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,34 +18,32 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ExtendWith(SpringExtension.class)
-class BookControllerIntegrationTest extends ControllerIntegrationTestBase<Book> {
+class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDto> {
 
     String booksUrl = "/books";
-
-    Book book1;
-    Book book2;
-    Book bookWithoutStartDate;
-    Book bookWithoutEndDate;
+    BookDto book1;
+    BookDto book2;
+    BookDto bookWithoutStartDate;
+    BookDto bookWithoutEndDate;
     @BeforeEach
     void setUp() {
-        book1 = Book.builder()
+
+        book1 = new BookDto(
+                "2023",
+                LocalDate.of(2023, 1, 1),
+                LocalDate.of(2023, 12, 31));
+        book2 = new BookDto(
+                "2022",
+                LocalDate.of(2022, 1, 1),
+                LocalDate.of(2022, 12, 31));
+        bookWithoutStartDate = BookDto.builder()
                 .label("2023")
-                .startDate(LocalDate.of(2023, 1, 1))
                 .endDate(LocalDate.of(2023, 12, 31))
                 .build();
-        book2 = Book.builder()
-                .label("2022")
-                .startDate(LocalDate.of(2022, 1, 1))
-                .endDate(LocalDate.of(2022, 12, 31))
-                .build();
-        bookWithoutStartDate = Book.builder()
-                .label("2023")
-                .endDate(LocalDate.of(2023, 12, 31))
-                .build();
-        bookWithoutEndDate = Book.builder()
+        bookWithoutEndDate = BookDto.builder()
                 .label("2023")
                 .startDate(LocalDate.of(2023, 1, 1))
                 .build();
@@ -56,7 +54,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<Book> 
     void create_givenValidBook_willReturnBook() throws Exception {
         MvcResult result = post(book1, booksUrl);
         assertHttpStatus(result, HttpStatus.CREATED);
-        assertThat(getResultObject(result, Book.class), equalToObject(book1));
+        assertThat(getResultObject(result, BookDto.class), equalToObject(book1));
     }
 
     @Test
@@ -76,7 +74,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<Book> 
     @Test
     @Order(4)
     void create_givenBookAlreadyExists_willReturnBadRequest() throws Exception {
-        post(book1, booksUrl);
+        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
         MvcResult result = post(book1, booksUrl);
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
     }
@@ -84,24 +82,23 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<Book> 
     @Test
     @Order(5)
     void list_given2BooksExists_willReturn2Books() throws Exception {
-        post(book1, booksUrl);
-        post(book2, booksUrl);
+        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
+        postIfNotExist(book2, booksUrl, booksUrl + "/" + book2.getLabel());
 
         MvcResult result = get(booksUrl);
         assertHttpStatus(result, HttpStatus.OK);
 
-        List<Book> resultBookList = getResultObjectList(result, Book.class);
+        List<BookDto> resultBookList = getResultObjectList(result, BookDto.class);
         assertThat(resultBookList, hasSize(2));
-        assertThat(resultBookList.get(0), equalToObject(book1));
-        assertThat(resultBookList.get(1), equalToObject(book2));
+        assertThat(resultBookList, containsInAnyOrder(book1, book2));
     }
 
     @Test
     @Order(6)
     void get_givenBookExists_willReturnBook() throws Exception {
-        post(book1, booksUrl);
+        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
         MvcResult result = get(booksUrl + "/" + book1.getLabel());
-        assertThat(getResultObject(result, Book.class), equalToObject(book1));
+        assertThat(getResultObject(result, BookDto.class), equalToObject(book1));
     }
 
     @Test
@@ -114,15 +111,15 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<Book> 
     @Test
     @Order(8)
     void update_givenBookExists_willUpdate() throws Exception {
-        post(book1, booksUrl);
-        Book book11 = Book.builder()
+        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
+        BookDto book11 = BookDto.builder()
                 .label("2023")
                 .startDate(LocalDate.of(2023,4, 1))
                 .endDate(LocalDate.of(2023, 12, 31))
                 .build();
         MvcResult result = patch(book11, booksUrl + "/" + 2023);
         assertHttpStatus(result, HttpStatus.OK);
-        assertThat(getResultObject(result, Book.class), equalToObject(book11));
+        assertThat(getResultObject(result, BookDto.class), equalToObject(book11));
     }
 
     @Test

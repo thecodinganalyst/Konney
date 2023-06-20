@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.hevlar.konney.domain.entities.IJournalEntry;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 
@@ -20,6 +21,7 @@ public class JournalEntry implements IJournalEntry {
     BigDecimal amount;
     @ManyToOne
     @JoinColumn
+    @ToString.Exclude
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "journalId", scope = Journal.class)
     Journal journal;
 }

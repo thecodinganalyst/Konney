@@ -3,6 +3,7 @@ package com.hevlar.konney.presentation;
 import com.hevlar.konney.application.BookkeepingException;
 import com.hevlar.konney.application.IBookService;
 import com.hevlar.konney.infrastructure.entities.Book;
+import com.hevlar.konney.presentation.dto.BookDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +21,10 @@ public class BookController extends ValidationController{
     }
 
     @PatchMapping("/{label}")
-    public Book update(@PathVariable("label") String label, @RequestBody Book book){
+    public BookDto update(@PathVariable("label") String label, @RequestBody @Valid BookDto bookDto){
         try{
-            return service.updateBook(label, book);
+            Book book = service.updateBook(label, bookDto.toBook());
+            return BookDto.fromBook(book);
         }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
@@ -30,23 +32,26 @@ public class BookController extends ValidationController{
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Book create(@RequestBody @Valid Book book){
+    public BookDto create(@RequestBody @Valid BookDto bookDto){
         try{
-            return service.createBook(book);
+            Book book = service.createBook(bookDto.toBook());
+            return BookDto.fromBook(book);
         }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
 
     @GetMapping
-    public List<Book> list(){
-        return service.listBooks();
+    public List<BookDto> list(){
+        List<Book> bookList = service.listBooks();
+        return BookDto.fromBookList(bookList);
     }
 
     @GetMapping("/{label}")
-    public Book get(@PathVariable("label") String label){
+    public BookDto get(@PathVariable("label") String label){
         try{
-            return service.getBook(label);
+            Book book = service.getBook(label);
+            return BookDto.fromBook(book);
         }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }

@@ -1,7 +1,6 @@
 package com.hevlar.konney.domain.validation;
 
 import com.hevlar.konney.domain.entities.IAccount;
-import com.hevlar.konney.infrastructure.entities.Account;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
