@@ -24,18 +24,22 @@ import static org.hamcrest.Matchers.*;
 class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDto> {
 
     String booksUrl = "/books";
-    BookDto book1;
-    BookDto book2;
+    BookDto book2024;
+    BookDto book2023;
+    BookDto book2022;
     BookDto bookWithoutStartDate;
     BookDto bookWithoutEndDate;
     @BeforeEach
     void setUp() {
-
-        book1 = new BookDto(
+        book2024 = new BookDto(
+                "2024",
+                LocalDate.of(2024, 1, 1),
+                LocalDate.of(2024, 12, 31));
+        book2023 = new BookDto(
                 "2023",
                 LocalDate.of(2023, 1, 1),
                 LocalDate.of(2023, 12, 31));
-        book2 = new BookDto(
+        book2022 = new BookDto(
                 "2022",
                 LocalDate.of(2022, 1, 1),
                 LocalDate.of(2022, 12, 31));
@@ -52,9 +56,9 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDt
     @Test
     @Order(1)
     void create_givenValidBook_willReturnBook() throws Exception {
-        MvcResult result = post(book1, booksUrl);
+        MvcResult result = post(book2024, booksUrl);
         assertHttpStatus(result, HttpStatus.CREATED);
-        assertThat(getResultObject(result, BookDto.class), equalToObject(book1));
+        assertThat(getResultObject(result, BookDto.class), equalToObject(book2024));
     }
 
     @Test
@@ -74,58 +78,75 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDt
     @Test
     @Order(4)
     void create_givenBookAlreadyExists_willReturnBadRequest() throws Exception {
-        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
-        MvcResult result = post(book1, booksUrl);
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        MvcResult result = post(book2023, booksUrl);
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
     }
 
     @Test
     @Order(5)
     void list_given2BooksExists_willReturn2Books() throws Exception {
-        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
-        postIfNotExist(book2, booksUrl, booksUrl + "/" + book2.getLabel());
+        postIfNotExist(book2024, booksUrl, booksUrl + "/" + book2024.getLabel());
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        postIfNotExist(book2022, booksUrl, booksUrl + "/" + book2022.getLabel());
 
         MvcResult result = get(booksUrl);
         assertHttpStatus(result, HttpStatus.OK);
 
         List<BookDto> resultBookList = getResultObjectList(result, BookDto.class);
-        assertThat(resultBookList, hasSize(2));
-        assertThat(resultBookList, containsInAnyOrder(book1, book2));
+        assertThat(resultBookList, hasSize(3));
+        assertThat(resultBookList, containsInAnyOrder(book2024, book2023, book2022));
     }
 
     @Test
     @Order(6)
     void get_givenBookExists_willReturnBook() throws Exception {
-        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
-        MvcResult result = get(booksUrl + "/" + book1.getLabel());
-        assertThat(getResultObject(result, BookDto.class), equalToObject(book1));
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        MvcResult result = get(booksUrl + "/" + book2023.getLabel());
+        assertThat(getResultObject(result, BookDto.class), equalToObject(book2023));
     }
 
     @Test
     @Order(7)
-    void get_givenBookDoesNotExists_willReturnBadRequest() throws Exception {
-        MvcResult result = get(booksUrl + "/" + book1.getLabel());
-        assertHttpStatus(result, HttpStatus.OK);
+    void get_givenBookDoesNotExists_willReturnNotFound() throws Exception {
+        MvcResult result = get(booksUrl + "/1234");
+        assertHttpStatus(result, HttpStatus.NOT_FOUND);
     }
 
     @Test
     @Order(8)
     void update_givenBookExists_willUpdate() throws Exception {
-        postIfNotExist(book1, booksUrl, booksUrl + "/" + book1.getLabel());
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
         BookDto book11 = BookDto.builder()
                 .label("2023")
                 .startDate(LocalDate.of(2023,4, 1))
                 .endDate(LocalDate.of(2023, 12, 31))
                 .build();
-        MvcResult result = patch(book11, booksUrl + "/" + 2023);
+        MvcResult result = put(book11, booksUrl + "/" + 2023);
         assertHttpStatus(result, HttpStatus.OK);
         assertThat(getResultObject(result, BookDto.class), equalToObject(book11));
     }
 
     @Test
     @Order(9)
-    void update_givenBookDoesNotExist_willReturnBadRequest() throws Exception {
-        MvcResult result = patch(book2, booksUrl + "/1234");
+    void update_givenBookDoesNotExist_willReturnNotFound() throws Exception {
+        MvcResult result = put(book2022, booksUrl + "/1234");
+        assertHttpStatus(result, HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @Order(10)
+    void update_givenBookWithoutStartDate_willReturnBadRequest() throws Exception {
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        MvcResult result = put(bookWithoutStartDate, booksUrl + "/" + book2023.getLabel());
+        assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @Order(11)
+    void update_givenBookWithoutEndDate_willReturnBadRequest() throws Exception {
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        MvcResult result = put(bookWithoutEndDate, booksUrl + "/" + book2023.getLabel());
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
     }
 

@@ -1,6 +1,7 @@
 package com.hevlar.konney.presentation;
 
 import com.hevlar.konney.application.BookkeepingException;
+import com.hevlar.konney.application.BookkeepingNotFoundException;
 import com.hevlar.konney.application.IBookService;
 import com.hevlar.konney.infrastructure.entities.Book;
 import com.hevlar.konney.presentation.dto.BookDto;
@@ -20,11 +21,13 @@ public class BookController extends ValidationController{
         this.service = service;
     }
 
-    @PatchMapping("/{label}")
+    @PutMapping("/{label}")
     public BookDto update(@PathVariable("label") String label, @RequestBody @Valid BookDto bookDto){
-        try{
+        try {
             Book book = service.updateBook(label, bookDto.toBook());
             return BookDto.fromBook(book);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
         }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
@@ -52,6 +55,8 @@ public class BookController extends ValidationController{
         try{
             Book book = service.getBook(label);
             return BookDto.fromBook(book);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
         }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }

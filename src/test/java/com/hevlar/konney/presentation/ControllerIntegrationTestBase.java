@@ -48,8 +48,8 @@ public class ControllerIntegrationTestBase<T> {
         return mvc.perform(MockMvcRequestBuilders.get(url)).andReturn();
     }
 
-    protected MvcResult patch(T t, String url) throws Exception {
-        return mvc.perform(MockMvcRequestBuilders.patch(url)
+    protected MvcResult put(T t, String url) throws Exception {
+        return mvc.perform(MockMvcRequestBuilders.put(url)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(t)))
                 .andReturn();

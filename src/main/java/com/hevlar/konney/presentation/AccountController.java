@@ -1,6 +1,7 @@
 package com.hevlar.konney.presentation;
 
 import com.hevlar.konney.application.BookkeepingException;
+import com.hevlar.konney.application.BookkeepingNotFoundException;
 import com.hevlar.konney.application.IAccountService;
 import com.hevlar.konney.infrastructure.entities.Account;
 import com.hevlar.konney.presentation.dto.AccountDto;
@@ -21,12 +22,14 @@ public class AccountController extends ValidationController{
         this.service = service;
     }
 
-    @PatchMapping("/{accountId}")
+    @PutMapping("/{accountId}")
     public AccountDto update(@PathVariable("label") String label, @PathVariable("accountId") String accountId, @RequestBody @Valid AccountDto accountDto){
         try {
             Account account = accountDto.toAccount();
             Account updated = service.updateAccount(label, accountId, account);
             return AccountDto.fromAccount(updated);
+        } catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
         } catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
@@ -39,7 +42,9 @@ public class AccountController extends ValidationController{
             Account account = accountDto.toAccount();
             Account created = service.createAccount(label, account);
             return AccountDto.fromAccount(created);
-        }catch (BookkeepingException ex){
+        } catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        } catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
@@ -54,6 +59,8 @@ public class AccountController extends ValidationController{
         try{
             Account retrieved = service.getAccount(label, accountId);
             return AccountDto.fromAccount(retrieved);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
         }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }

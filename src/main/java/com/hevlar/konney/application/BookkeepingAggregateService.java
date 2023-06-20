@@ -34,7 +34,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     }
 
     public Book getBook(String label) throws BookkeepingException {
-        return bookRepository.findById(label).orElseThrow(() -> new BookkeepingException("Book not found"));
+        return bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
     }
 
     public Book createBook(Book book) throws BookkeepingException {
@@ -43,7 +43,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     }
 
     public Book updateBook(String label, Book book) throws BookkeepingException {
-        Book savedBook = bookRepository.findById(label).orElseThrow(() -> new BookkeepingException("Book not found"));
+        Book savedBook = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
         if(accountRepository.existsByBookLabel(label)) throw new BookkeepingException("Cannot update book when accounts exists");
         savedBook.setStartDate(book.getStartDate());
         savedBook.setEndDate(book.getEndDate());
@@ -51,7 +51,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     }
 
     public void deleteBook(String label) throws BookkeepingException {
-        if(bookRepository.existsById(label)) throw new BookkeepingException("Book not found");
+        if(bookRepository.existsById(label)) throw new BookkeepingNotFoundException("Book not found");
         if(accountRepository.existsByBookLabel(label)) throw new BookkeepingException("Cannot delete book when accounts exists");
         bookRepository.deleteById(label);
     }
@@ -63,20 +63,23 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
 
     @Override
     public Account getAccount(String label, String accountId) throws BookkeepingException {
-        return accountRepository.findByAccountIdAndBookLabel(accountId, label).orElseThrow(() -> new BookkeepingException("Account not found"));
+        return accountRepository.findByAccountIdAndBookLabel(accountId, label).orElseThrow(() -> new BookkeepingNotFoundException("Account not found"));
     }
 
     @Override
     public Account createAccount(String label, Account account) throws BookkeepingException {
-        Book book = bookRepository.findById(label).orElseThrow(() -> new BookkeepingException("Book not found"));
+        Book book = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
+        validateAccount(account, book);
         account.setBook(book);
         return accountRepository.save(account);
     }
 
     @Override
     public Account updateAccount(String label, String accountId, Account account) throws BookkeepingException {
-        if(!bookRepository.existsById(label)) throw new BookkeepingException("Book not found");
-        Account savedAccount = accountRepository.findByAccountIdAndBookLabel(accountId, label).orElseThrow(() -> new BookkeepingException("Account not found"));
+        Book book = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
+        validateAccount(account, book);
+
+        Account savedAccount = accountRepository.findByAccountIdAndBookLabel(accountId, label).orElseThrow(() -> new BookkeepingNotFoundException("Account not found"));
 
         if(account.getAccountGroup() != savedAccount.getAccountGroup()){
             if(journalEntryRepository.existsByAccount_AccountId(account.getAccountId()))
@@ -84,14 +87,22 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
         }
 
         savedAccount.setAccountName(account.getAccountName());
-
-
+        savedAccount.setAccountGroup(account.getAccountGroup());
+        if(account.isBalanceSheetAccountGroup()){
+            savedAccount.setOpeningDate(account.getOpeningDate());
+            savedAccount.setCurrency(account.getCurrency());
+            savedAccount.setOpeningBalance(account.getOpeningBalance());
+        }else{
+            savedAccount.setOpeningDate(null);
+            savedAccount.setCurrency(null);
+            savedAccount.setOpeningBalance(null);
+        }
         return accountRepository.save(savedAccount);
     }
 
     @Override
     public void deleteAccount(String label, String accountId) throws BookkeepingException {
-        if(accountRepository.findByAccountIdAndBookLabel(accountId, label).isEmpty()) throw new BookkeepingException("Account not found");
+        if(accountRepository.findByAccountIdAndBookLabel(accountId, label).isEmpty()) throw new BookkeepingNotFoundException("Account not found");
         accountRepository.deleteById(accountId);
     }
 
@@ -102,7 +113,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
 
     @Override
     public Journal getJournal(Long journalId) throws BookkeepingException {
-        return journalRepository.findById(journalId).orElseThrow(() -> new BookkeepingException("Journal not found"));
+        return journalRepository.findById(journalId).orElseThrow(() -> new BookkeepingNotFoundException("Journal not found"));
     }
 
     @Override
@@ -112,14 +123,21 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
 
     @Override
     public Journal updateJournal(Long journalId, Journal journal) throws BookkeepingException {
-        if(journalRepository.existsById(journalId)) throw new BookkeepingException("Journal not found");
+        if(journalRepository.existsById(journalId)) throw new BookkeepingNotFoundException("Journal not found");
         journal.setJournalId(journalId);
         return journalRepository.save(journal);
     }
 
     @Override
     public void deleteJournal(Long journalId) throws BookkeepingException {
-        if(journalRepository.existsById(journalId)) throw new BookkeepingException("Journal not found");
+        if(journalRepository.existsById(journalId)) throw new BookkeepingNotFoundException("Journal not found");
         journalRepository.deleteById(journalId);
+    }
+
+    private void validateAccount(Account account, Book book) throws BookkeepingException {
+        if(account.isBalanceSheetAccountGroup()){
+            if(account.getOpeningDate().isBefore(book.getStartDate())) throw new BookkeepingException("Account opening date cannot be before book start date");
+            if(account.getOpeningDate().isAfter(book.getEndDate())) throw new BookkeepingException("Account opening date cannot be after book end date");
+        }
     }
 }
