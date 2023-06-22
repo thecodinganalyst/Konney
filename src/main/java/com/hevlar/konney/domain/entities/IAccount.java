@@ -19,7 +19,6 @@ public interface IAccount {
     LocalDate getOpeningDate();
     String getCurrency();
     BigDecimal getOpeningBalance();
-    IBook getBook();
 
     default boolean isBalanceSheetAccountGroup() {
         return AccountGroup.balanceSheetAccountGroupList.contains(getAccountGroup());

@@ -12,6 +12,8 @@ public interface IBook {
     LocalDate getStartDate();
     @NotNull
     LocalDate getEndDate();
+    @NotNull
+    LocalDate getCloseUntilDate();
     List<? extends IAccount> getAccountList();
     List<? extends IJournal> getJournalList();
 }

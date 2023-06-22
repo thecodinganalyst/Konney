@@ -1,20 +1,21 @@
 package com.hevlar.konney.domain.entities;
 
-import com.hevlar.konney.domain.valueobjects.ActivityType;
-import com.hevlar.konney.domain.valueobjects.ExpenseType;
-import com.hevlar.konney.infrastructure.entities.Book;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface IJournal {
+    @NotNull
     Long getJournalId();
+    @NotNull
     LocalDate getTxDate();
+    @NotNull
     LocalDate getPostDate();
+    @NotEmpty
     String getDescription();
     List<? extends IJournalEntry> getDebitEntries();
     List<? extends IJournalEntry> getCreditEntries();
-    ExpenseType getExpenseType();
-    ActivityType getActivityType();
-    Book getBook();
+    List<? extends IJournalEntry> getEntries();
 }

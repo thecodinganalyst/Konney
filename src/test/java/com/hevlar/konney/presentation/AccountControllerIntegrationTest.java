@@ -41,6 +41,7 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<Acc
                 .label("2022")
                 .startDate(LocalDate.of(2022, 1, 1))
                 .endDate(LocalDate.of(2022, 12, 31))
+                .closeUntilDate(LocalDate.of(2022, 1, 1))
                 .build();
         mvc.perform(MockMvcRequestBuilders.post(booksUrl)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -51,6 +52,7 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<Acc
                 .label("2023")
                 .startDate(LocalDate.of(2023, 1, 1))
                 .endDate(LocalDate.of(2023, 12, 31))
+                .closeUntilDate(LocalDate.of(2023, 1, 1))
                 .build();
         mvc.perform(MockMvcRequestBuilders.post(booksUrl)
                         .contentType(MediaType.APPLICATION_JSON)

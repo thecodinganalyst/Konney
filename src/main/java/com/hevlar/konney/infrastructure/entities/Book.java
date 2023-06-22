@@ -21,6 +21,7 @@ public class Book implements IBook{
     String label;
     LocalDate startDate;
     LocalDate endDate;
+    LocalDate closeUntilDate;
     @Builder.Default
     @OneToMany(mappedBy = "book", fetch = FetchType.LAZY)
     List<Account> accountList = new ArrayList<>();

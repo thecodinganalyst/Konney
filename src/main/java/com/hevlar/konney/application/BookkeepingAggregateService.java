@@ -1,15 +1,19 @@
 package com.hevlar.konney.application;
 
+import com.hevlar.konney.domain.entities.IJournalEntry;
 import com.hevlar.konney.infrastructure.entities.Account;
 import com.hevlar.konney.infrastructure.entities.Book;
 import com.hevlar.konney.infrastructure.entities.Journal;
+import com.hevlar.konney.infrastructure.entities.JournalEntry;
 import com.hevlar.konney.infrastructure.repositories.AccountRepository;
 import com.hevlar.konney.infrastructure.repositories.BookRepository;
 import com.hevlar.konney.infrastructure.repositories.JournalEntryRepository;
 import com.hevlar.konney.infrastructure.repositories.JournalRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class BookkeepingAggregateService implements IBookService, IAccountService, IJournalService {
@@ -39,14 +43,17 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
 
     public Book createBook(Book book) throws BookkeepingException {
         if(bookRepository.existsById(book.getLabel())) throw new BookkeepingException("Book with the same label already exists");
+        validateBook(book);
         return bookRepository.save(book);
     }
 
     public Book updateBook(String label, Book book) throws BookkeepingException {
         Book savedBook = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
         if(accountRepository.existsByBookLabel(label)) throw new BookkeepingException("Cannot update book when accounts exists");
+        validateBook(book);
         savedBook.setStartDate(book.getStartDate());
         savedBook.setEndDate(book.getEndDate());
+        savedBook.setCloseUntilDate(book.getCloseUntilDate());
         return bookRepository.save(savedBook);
     }
 
@@ -103,34 +110,48 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     @Override
     public void deleteAccount(String label, String accountId) throws BookkeepingException {
         if(accountRepository.findByAccountIdAndBookLabel(accountId, label).isEmpty()) throw new BookkeepingNotFoundException("Account not found");
+        if(journalEntryRepository.existsByAccount_AccountId(accountId)) throw new BookkeepingException("Cannot delete account when there are journal entries present for the account");
         accountRepository.deleteById(accountId);
     }
 
     @Override
-    public List<Journal> listJournals() {
-        return journalRepository.findAll();
+    public List<Journal> listJournals(String label) {
+        return journalRepository.findAllByBookLabel(label);
     }
 
     @Override
-    public Journal getJournal(Long journalId) throws BookkeepingException {
-        return journalRepository.findById(journalId).orElseThrow(() -> new BookkeepingNotFoundException("Journal not found"));
+    public Journal getJournal(String label, Long journalId) throws BookkeepingException {
+        return journalRepository.findByJournalIdAndBookLabel(journalId, label).orElseThrow(() -> new BookkeepingNotFoundException("Journal not found"));
     }
 
     @Override
-    public Journal createJournal(Journal journal) {
+    public Journal createJournal(String label, Journal journal) throws BookkeepingException {
+        Book book = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
+        validateJournal(journal, book);
+        journal.setBook(book);
         return journalRepository.save(journal);
     }
 
     @Override
-    public Journal updateJournal(Long journalId, Journal journal) throws BookkeepingException {
-        if(journalRepository.existsById(journalId)) throw new BookkeepingNotFoundException("Journal not found");
-        journal.setJournalId(journalId);
-        return journalRepository.save(journal);
+    public Journal updateJournal(String label, Long journalId, Journal journal) throws BookkeepingException {
+        Book book = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
+        Journal savedJournal = journalRepository.findByJournalIdAndBookLabel(journalId, label).orElseThrow(() -> new BookkeepingNotFoundException("Journal not found"));
+        validateJournal(journal, book);
+
+        savedJournal.setDescription(journal.getDescription());
+        savedJournal.setTxDate(journal.getTxDate());
+        savedJournal.setPostDate(journal.getPostDate());
+        savedJournal.setEntries(journal.getEntries());
+
+        return journalRepository.save(savedJournal);
     }
 
     @Override
-    public void deleteJournal(Long journalId) throws BookkeepingException {
-        if(journalRepository.existsById(journalId)) throw new BookkeepingNotFoundException("Journal not found");
+    public void deleteJournal(String label, Long journalId) throws BookkeepingException {
+        Book book = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
+        Journal savedJournal = journalRepository.findByJournalIdAndBookLabel(journalId, label).orElseThrow(() -> new BookkeepingNotFoundException("Journal not found"));
+        if(savedJournal.getTxDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Cannot delete journal for transaction date before book close date");
+        if(savedJournal.getPostDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Cannot delete journal for post date before book close date");
         journalRepository.deleteById(journalId);
     }
 
@@ -139,5 +160,60 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
             if(account.getOpeningDate().isBefore(book.getStartDate())) throw new BookkeepingException("Account opening date cannot be before book start date");
             if(account.getOpeningDate().isAfter(book.getEndDate())) throw new BookkeepingException("Account opening date cannot be after book end date");
         }
+    }
+
+    private void validateJournal(Journal journal, Book book) throws BookkeepingException {
+        if(journal.getTxDate().isBefore(book.getStartDate())) throw new BookkeepingException("Journal transaction date cannot be before book start date");
+        if(journal.getTxDate().isAfter(book.getEndDate())) throw new BookkeepingException("Journal transaction date cannot be after book start date");
+        if(journal.getPostDate().isBefore(book.getStartDate())) throw new BookkeepingException("Journal post date cannot be before book start date");
+        if(journal.getPostDate().isAfter(book.getEndDate())) throw new BookkeepingException("Journal post date cannot be after book start date");
+        if(journal.getTxDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Journal transaction date is before book close date");
+        if(journal.getPostDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Journal post date is before book close date");
+
+        // ensure all accounts in the entries are valid
+        validateJournalAccounts(journal, book);
+
+        // ensure the debit amount and credit amount balances if they are the same currency
+        validateJournalBalance(journal);
+    }
+
+    private void validateJournalAccounts(Journal journal, Book book) throws BookkeepingException {
+        List<String> accountList = journal.getEntries().stream().map(JournalEntry::getAccountId).toList();
+
+        List<String> resultAccountList = accountRepository.findAllByAccountIdInAndBookLabel(accountList, book.getLabel())
+                .stream()
+                .map(Account::getAccountId)
+                .toList();
+        List<String> unmatchedAccountList = accountList.stream()
+                .filter(account -> !resultAccountList.contains(account))
+                .toList();
+        if(unmatchedAccountList.size() > 0){
+            throw new BookkeepingException("Accounts " + unmatchedAccountList + " not found");
+        }
+    }
+
+    private void validateJournalBalance(Journal journal) throws BookkeepingException {
+        String currencyFirst = journal.getEntries().get(0).getCurrency();
+        boolean sameCurrency = journal.getEntries().stream().allMatch(entry -> Objects.equals(entry.getCurrency(), currencyFirst));
+        if(sameCurrency){
+            BigDecimal debitTotal = journal.getDebitEntries()
+                    .stream()
+                    .map(IJournalEntry::getAmount)
+                    .reduce((acc, item) -> BigDecimal.valueOf(acc.doubleValue() + item.doubleValue()))
+                    .orElse(BigDecimal.ZERO);
+            BigDecimal creditTotal = journal.getCreditEntries()
+                    .stream()
+                    .map(IJournalEntry::getAmount)
+                    .reduce((acc, item) -> BigDecimal.valueOf(acc.doubleValue() + item.doubleValue()))
+                    .orElse(BigDecimal.ZERO);
+            if(!debitTotal.equals(creditTotal)){
+                throw new BookkeepingException("Debit amount does not tally with credit amount");
+            }
+        }
+    }
+
+    private void validateBook(Book book) throws BookkeepingException{
+        if(book.getCloseUntilDate().isBefore(book.getStartDate())) throw new BookkeepingException("Close until date cannot be before book start date");
+        if(book.getCloseUntilDate().isAfter(book.getEndDate())) throw new BookkeepingException("Close until date cannot be after book end date");
     }
 }

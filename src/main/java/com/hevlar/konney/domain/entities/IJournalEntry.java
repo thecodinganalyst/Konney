@@ -1,11 +1,20 @@
 package com.hevlar.konney.domain.entities;
 
+import com.hevlar.konney.domain.valueobjects.EntryType;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
 import java.math.BigDecimal;
 
 public interface IJournalEntry {
+    @NotNull
     Long getEntryId();
-    IAccount getAccount();
+    @NotEmpty
+    String getAccountId();
+    @NotEmpty
     String getCurrency();
+    @NotNull
     BigDecimal getAmount();
-    IJournal getJournal();
+    @NotNull
+    EntryType getEntryType();
 }

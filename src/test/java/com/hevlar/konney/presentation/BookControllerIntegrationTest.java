@@ -34,15 +34,18 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDt
         book2024 = new BookDto(
                 "2024",
                 LocalDate.of(2024, 1, 1),
-                LocalDate.of(2024, 12, 31));
+                LocalDate.of(2024, 12, 31),
+                LocalDate.of(2024, 1, 1));
         book2023 = new BookDto(
                 "2023",
                 LocalDate.of(2023, 1, 1),
-                LocalDate.of(2023, 12, 31));
+                LocalDate.of(2023, 12, 31),
+                LocalDate.of(2023, 1, 1));
         book2022 = new BookDto(
                 "2022",
                 LocalDate.of(2022, 1, 1),
-                LocalDate.of(2022, 12, 31));
+                LocalDate.of(2022, 12, 31),
+                LocalDate.of(2022, 1, 1));
         bookWithoutStartDate = BookDto.builder()
                 .label("2023")
                 .endDate(LocalDate.of(2023, 12, 31))
@@ -121,6 +124,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDt
                 .label("2023")
                 .startDate(LocalDate.of(2023,4, 1))
                 .endDate(LocalDate.of(2023, 12, 31))
+                .closeUntilDate(LocalDate.of(2023, 4, 1))
                 .build();
         MvcResult result = put(book11, booksUrl + "/" + 2023);
         assertHttpStatus(result, HttpStatus.OK);

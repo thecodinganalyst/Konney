@@ -1,7 +1,6 @@
 package com.hevlar.konney.presentation.dto;
 
 import com.hevlar.konney.domain.entities.IAccount;
-import com.hevlar.konney.domain.entities.IBook;
 import com.hevlar.konney.domain.valueobjects.AccountGroup;
 import com.hevlar.konney.infrastructure.entities.Account;
 import lombok.AllArgsConstructor;
@@ -53,8 +52,4 @@ public class AccountDto implements IAccount {
                 .build();
     }
 
-    @Override
-    public IBook getBook() {
-        return null;
-    }
 }

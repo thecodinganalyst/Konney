@@ -18,12 +18,14 @@ public class BookDto implements IBook {
     String label;
     LocalDate startDate;
     LocalDate endDate;
+    LocalDate closeUntilDate;
 
     public Book toBook(){
         return Book.builder()
                 .label(label)
                 .startDate(startDate)
                 .endDate(endDate)
+                .closeUntilDate(closeUntilDate)
                 .build();
     }
 
@@ -31,7 +33,8 @@ public class BookDto implements IBook {
         return new BookDto(
                 book.getLabel(),
                 book.getStartDate(),
-                book.getEndDate());
+                book.getEndDate(),
+                book.getCloseUntilDate());
 
     }
 
