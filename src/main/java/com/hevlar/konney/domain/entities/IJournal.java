@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface IJournal {
-    @NotNull
     Long getJournalId();
     @NotNull
     LocalDate getTxDate();
@@ -15,7 +14,5 @@ public interface IJournal {
     LocalDate getPostDate();
     @NotEmpty
     String getDescription();
-    List<? extends IJournalEntry> getDebitEntries();
-    List<? extends IJournalEntry> getCreditEntries();
     List<? extends IJournalEntry> getEntries();
 }

@@ -1,56 +1,75 @@
 package com.hevlar.konney.presentation;
 
+import com.hevlar.konney.application.BookkeepingException;
+import com.hevlar.konney.application.BookkeepingNotFoundException;
 import com.hevlar.konney.application.IJournalService;
 import com.hevlar.konney.infrastructure.entities.Journal;
+import com.hevlar.konney.presentation.dto.JournalDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/books/{label}/journals")
-public class JournalController {
+public class JournalController extends ValidationController{
     private final IJournalService service;
     public JournalController(IJournalService service){
         this.service = service;
     }
 
     @PatchMapping("/{journalId}")
-    public Journal update(@PathVariable("label") String label, @PathVariable("journalId") Long journalId, @RequestBody @Valid Journal journal){
+    public JournalDto update(@PathVariable("label") String label, @PathVariable("journalId") Long journalId, @RequestBody @Valid JournalDto journalDto){
         try{
-            return service.updateJournal(label, journalId, journal);
-        }catch (NoSuchElementException ex){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }catch (Exception ex){
+            Journal journal = service.updateJournal(label, journalId, journalDto.toJournal());
+            return JournalDto.fromJournal(journal);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Journal create(@PathVariable("label") String label, @RequestBody @Valid Journal journal){
+    public JournalDto create(@PathVariable("label") String label, @RequestBody @Valid JournalDto journalDto){
         try{
-            return service.createJournal(label, journal);
-        }catch (Exception ex){
+            Journal journal = service.createJournal(label, journalDto.toJournal());
+            return JournalDto.fromJournal(journal);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
 
     @GetMapping
-    public List<Journal> list(@PathVariable("label") String label){
-        return service.listJournals(label);
+    public List<JournalDto> list(@PathVariable("label") String label){
+        List<Journal> journalList = service.listJournals(label);
+        return JournalDto.fromJournalList(journalList);
     }
 
     @GetMapping("/{journalId}")
-    public Journal get(@PathVariable("label") String label, @PathVariable("journalId") Long journalId){
+    public JournalDto get(@PathVariable("label") String label, @PathVariable("journalId") Long journalId){
         try{
-            return service.getJournal(label, journalId);
-        }catch (NoSuchElementException ex){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }catch (Exception ex){
+            Journal journal = service.getJournal(label, journalId);
+            return JournalDto.fromJournal(journal);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }catch (BookkeepingException ex){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @DeleteMapping
+    public void delete(@PathVariable("label") String label, @PathVariable("journalId") Long journalId){
+        try{
+            service.deleteJournal(label, journalId);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }catch (BookkeepingException ex){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }

@@ -35,12 +35,10 @@ public class Journal implements IJournal {
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "label", scope = Book.class)
     Book book;
 
-    @Override
     public List<? extends IJournalEntry> getDebitEntries() {
         return getEntries().stream().filter(entry -> entry.getEntryType() == EntryType.Debit).toList();
     }
 
-    @Override
     public List<? extends IJournalEntry> getCreditEntries() {
         return getEntries().stream().filter(entry -> entry.getEntryType() == EntryType.Credit).toList();
     }

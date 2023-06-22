@@ -38,7 +38,6 @@ public class JournalEntry implements IJournalEntry {
         return account.getAccountId();
     }
 
-    @Override
     public String getCurrency(){
         return account.getCurrency();
     }

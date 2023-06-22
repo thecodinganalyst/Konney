@@ -164,9 +164,9 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
 
     private void validateJournal(Journal journal, Book book) throws BookkeepingException {
         if(journal.getTxDate().isBefore(book.getStartDate())) throw new BookkeepingException("Journal transaction date cannot be before book start date");
-        if(journal.getTxDate().isAfter(book.getEndDate())) throw new BookkeepingException("Journal transaction date cannot be after book start date");
+        if(journal.getTxDate().isAfter(book.getEndDate())) throw new BookkeepingException("Journal transaction date cannot be after book end date");
         if(journal.getPostDate().isBefore(book.getStartDate())) throw new BookkeepingException("Journal post date cannot be before book start date");
-        if(journal.getPostDate().isAfter(book.getEndDate())) throw new BookkeepingException("Journal post date cannot be after book start date");
+        if(journal.getPostDate().isAfter(book.getEndDate())) throw new BookkeepingException("Journal post date cannot be after book end date");
         if(journal.getTxDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Journal transaction date is before book close date");
         if(journal.getPostDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Journal post date is before book close date");
 

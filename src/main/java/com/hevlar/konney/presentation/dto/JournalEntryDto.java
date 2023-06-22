@@ -4,10 +4,7 @@ import com.hevlar.konney.domain.entities.IJournalEntry;
 import com.hevlar.konney.domain.valueobjects.EntryType;
 import com.hevlar.konney.infrastructure.entities.Account;
 import com.hevlar.konney.infrastructure.entities.JournalEntry;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,9 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 public class JournalEntryDto implements IJournalEntry {
+    @EqualsAndHashCode.Exclude
     Long entryId;
     String accountId;
-    String currency;
     BigDecimal amount;
     EntryType entryType;
 
@@ -33,7 +30,6 @@ public class JournalEntryDto implements IJournalEntry {
         return JournalEntryDto.builder()
                 .entryId(entry.getEntryId())
                 .accountId(entry.getAccountId())
-                .currency(entry.getCurrency())
                 .amount(entry.getAmount())
                 .entryType(entry.getEntryType())
                 .build();

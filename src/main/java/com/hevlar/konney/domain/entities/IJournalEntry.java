@@ -11,8 +11,6 @@ public interface IJournalEntry {
     Long getEntryId();
     @NotEmpty
     String getAccountId();
-    @NotEmpty
-    String getCurrency();
     @NotNull
     BigDecimal getAmount();
     @NotNull

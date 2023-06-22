@@ -21,9 +21,7 @@ import static org.hamcrest.Matchers.*;
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ExtendWith(SpringExtension.class)
-class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDto> {
-
-    String booksUrl = "/books";
+class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     BookDto book2024;
     BookDto book2023;
     BookDto book2022;
@@ -96,7 +94,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase<BookDt
         MvcResult result = get(booksUrl);
         assertHttpStatus(result, HttpStatus.OK);
 
-        List<BookDto> resultBookList = getResultObjectList(result, BookDto.class);
+        List<BookDto> resultBookList = getResultObjectList(result, BookDto.class).stream().map(o -> (BookDto)o).toList();
         assertThat(resultBookList, hasSize(3));
         assertThat(resultBookList, containsInAnyOrder(book2024, book2023, book2022));
     }

@@ -25,10 +25,8 @@ import static org.hamcrest.Matchers.*;
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ExtendWith(SpringExtension.class)
-class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<AccountDto>{
+class AccountControllerIntegrationTest extends ControllerIntegrationTestBase{
 
-    String booksUrl = "/books";
-    String accountsUrl = "/accounts";
     BookDto book2022;
     BookDto book2023;
     AccountDto cash;
@@ -89,7 +87,7 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<Acc
     void create_givenValidAccountAndBookLabel_willCreateAccount() throws Exception {
         MvcResult result = post(cash, generateAccountsUrl(book2022.getLabel()));
         assertHttpStatus(result, HttpStatus.CREATED);
-        AccountDto resultAccount = getResultObject(result, AccountDto.class);
+        AccountDto resultAccount = (AccountDto) getResultObject(result, AccountDto.class);
         assertThat(resultAccount, equalToObject(cash));
     }
 
@@ -168,7 +166,7 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<Acc
 
         MvcResult result = get(generateAccountsUrl("2022"));
         assertHttpStatus(result, HttpStatus.OK);
-        List<AccountDto> resultAccountList = getResultObjectList(result, AccountDto.class);
+        List<AccountDto> resultAccountList = getResultObjectList(result, AccountDto.class).stream().map(o -> (AccountDto)o).toList();
         assertThat(resultAccountList.size(), is(3));
     }
 
@@ -286,11 +284,4 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase<Acc
         //TODO: add test
     }
 
-    private String generateAccountsUrl(String label, String accountId){
-        return booksUrl + "/" + label + "/" + accountsUrl + "/" + accountId;
-    }
-
-    private String generateAccountsUrl(String label){
-        return booksUrl + "/" + label + "/" + accountsUrl;
-    }
 }

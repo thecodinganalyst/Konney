@@ -21,22 +21,25 @@ import static org.hamcrest.Matchers.is;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
-public class ControllerIntegrationTestBase<T> {
+public class ControllerIntegrationTestBase {
 
     @Autowired
     MockMvc mvc;
-
     @Autowired
     ObjectMapper objectMapper;
 
-    protected MvcResult post(T t, String url) throws Exception {
+    String booksUrl = "/books";
+    String accountsUrl = "/accounts";
+    String journalsUrl = "/journals";
+
+    protected MvcResult post(Object t, String url) throws Exception {
         return mvc.perform(MockMvcRequestBuilders.post(url)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(t)))
                 .andReturn();
     }
 
-    protected MvcResult postIfNotExist(T t, String postUrl, String getUrl) throws Exception {
+    protected MvcResult postIfNotExist(Object t, String postUrl, String getUrl) throws Exception {
         MvcResult result = get(getUrl);
         if(result.getResponse().getStatus() != HttpStatus.OK.value()){
             return post(t, postUrl);
@@ -48,7 +51,7 @@ public class ControllerIntegrationTestBase<T> {
         return mvc.perform(MockMvcRequestBuilders.get(url)).andReturn();
     }
 
-    protected MvcResult put(T t, String url) throws Exception {
+    protected MvcResult put(Object t, String url) throws Exception {
         return mvc.perform(MockMvcRequestBuilders.put(url)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(t)))
@@ -59,15 +62,29 @@ public class ControllerIntegrationTestBase<T> {
         assertThat(result.getResponse().getStatus(), is(status.value()));
     }
 
-    protected T getResultObject(MvcResult result, Class<T> classRef ) throws Exception {
+    protected Object getResultObject(MvcResult result, Class<?> classRef ) throws Exception {
         return objectMapper.readValue(result.getResponse().getContentAsString(), classRef);
     }
 
-    protected List<T> getResultObjectList(MvcResult result, Class<T> classRef ) throws Exception {
+    protected List<Object> getResultObjectList(MvcResult result, Class<?> classRef ) throws Exception {
         ObjectReader reader = objectMapper.readerForListOf(classRef);
         return reader.readValue(result.getResponse().getContentAsString());
     }
 
+    protected String generateAccountsUrl(String label, String accountId){
+        return booksUrl + "/" + label + accountsUrl + "/" + accountId;
+    }
 
+    protected String generateAccountsUrl(String label){
+        return booksUrl + "/" + label + accountsUrl;
+    }
+
+    protected String generateJournalsUrl(String label, String journalId){
+        return booksUrl + "/" + label + journalsUrl + "/" + journalId;
+    }
+
+    protected String generateJournalsUrl(String label){
+        return booksUrl + "/" + label + journalsUrl;
+    }
 
 }
