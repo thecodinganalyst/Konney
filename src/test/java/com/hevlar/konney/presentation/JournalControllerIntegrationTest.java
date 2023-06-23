@@ -199,12 +199,85 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
 
     @Test
     void update_givenJournalNotFound_willReturnNotFound() throws Exception {
-
         JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 3), "test again", LocalDate.of(2022, 3, 3), cashId, new BigDecimal("20.00"), foodExpenseId, new BigDecimal("20.00"));
         MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", 1234567890L));
         assertHttpStatus(updateResult, HttpStatus.NOT_FOUND);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"2021-12-31", "2023-01-01"})
+    void update_givenJournalWithTxDateBeforeAfterBookDate_willReturnBadRequest(LocalDate txDate) throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(txDate, "test", LocalDate.of(2022, 3, 1), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2021-12-31", "2023-01-01"})
+    void update_givenJournalWithPostDateBeforeAfterBookDate_willReturnBadRequest(LocalDate postDate) throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 1), "test", postDate, foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void update_givenJournalWithTxDateBeforeCloseDate_willReturnBadRequest() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 1, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void update_givenJournalWithPostDateBeforeCloseDate_willReturnBadRequest() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void update_givenJournalWithInvalidAccount_willReturnBadRequest() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        AccountDto invalid = AccountDto.builder().accountId("1234").build();
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), invalid, cashId, new BigDecimal("10.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void update_givenJournalWithUnbalancedEntries_willReturnBadRequest() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), foodExpenseId, new BigDecimal("11.00"), cashId, new BigDecimal("10.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+    }
 
     private JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, AccountDto creditAccount, BigDecimal amount){
         return createJournal(txDate, desc, postDate, debitAccount, amount, creditAccount, amount);
