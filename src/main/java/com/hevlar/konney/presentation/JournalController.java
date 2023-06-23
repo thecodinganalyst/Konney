@@ -63,7 +63,7 @@ public class JournalController extends ValidationController{
         }
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{journalId}")
     public void delete(@PathVariable("label") String label, @PathVariable("journalId") Long journalId){
         try{
             service.deleteJournal(label, journalId);
