@@ -8,10 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,12 +37,9 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase{
                 .label("2022")
                 .startDate(LocalDate.of(2022, 1, 1))
                 .endDate(LocalDate.of(2022, 12, 31))
-                .closeUntilDate(LocalDate.of(2022, 1, 1))
+                .closeUntilDate(LocalDate.of(2022, 2, 1))
                 .build();
-        mvc.perform(MockMvcRequestBuilders.post(booksUrl)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(book2022)))
-                .andReturn();
+        postIfNotExist(book2022, booksUrl, booksUrl + "/2022");
 
         book2023 = BookDto.builder()
                 .label("2023")
@@ -52,10 +47,7 @@ class AccountControllerIntegrationTest extends ControllerIntegrationTestBase{
                 .endDate(LocalDate.of(2023, 12, 31))
                 .closeUntilDate(LocalDate.of(2023, 1, 1))
                 .build();
-        mvc.perform(MockMvcRequestBuilders.post(booksUrl)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(book2022)))
-                .andReturn();
+        postIfNotExist(book2023, booksUrl, booksUrl + "/2023");
 
         cash = AccountDto.builder()
                 .accountId("CASH")

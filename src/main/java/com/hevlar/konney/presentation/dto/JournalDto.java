@@ -34,11 +34,15 @@ public class JournalDto implements IJournal {
     }
 
     public Journal toJournal(){
-        return Journal.builder()
+        Journal journal = Journal.builder()
                 .txDate(txDate)
                 .postDate(postDate)
                 .description(description)
                 .entries(JournalEntryDto.toJournalEntryList(entries))
                 .build();
+        journal.setEntries(
+                journal.getEntries().stream().peek(je -> je.setJournal(journal)).toList()
+        );
+        return journal;
     }
 }

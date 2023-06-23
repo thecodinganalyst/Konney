@@ -43,7 +43,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
                 "2022",
                 LocalDate.of(2022, 1, 1),
                 LocalDate.of(2022, 12, 31),
-                LocalDate.of(2022, 1, 1));
+                LocalDate.of(2022, 2, 1));
         bookWithoutStartDate = BookDto.builder()
                 .label("2023")
                 .endDate(LocalDate.of(2023, 12, 31))
@@ -86,7 +86,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
 
     @Test
     @Order(5)
-    void list_given2BooksExists_willReturn2Books() throws Exception {
+    void list_givenBooksExists_willReturnBooks() throws Exception {
         postIfNotExist(book2024, booksUrl, booksUrl + "/" + book2024.getLabel());
         postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
         postIfNotExist(book2022, booksUrl, booksUrl + "/" + book2022.getLabel());
@@ -95,8 +95,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
         assertHttpStatus(result, HttpStatus.OK);
 
         List<BookDto> resultBookList = getResultObjectList(result, BookDto.class).stream().map(o -> (BookDto)o).toList();
-        assertThat(resultBookList, hasSize(3));
-        assertThat(resultBookList, containsInAnyOrder(book2024, book2023, book2022));
+        assertThat(resultBookList, hasItems(book2024, book2023, book2022));
     }
 
     @Test
@@ -117,14 +116,14 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     @Test
     @Order(8)
     void update_givenBookExists_willUpdate() throws Exception {
-        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        postIfNotExist(book2024, booksUrl, booksUrl + "/" + book2023.getLabel());
         BookDto book11 = BookDto.builder()
-                .label("2023")
+                .label("2024")
                 .startDate(LocalDate.of(2023,4, 1))
                 .endDate(LocalDate.of(2023, 12, 31))
                 .closeUntilDate(LocalDate.of(2023, 4, 1))
                 .build();
-        MvcResult result = put(book11, booksUrl + "/" + 2023);
+        MvcResult result = put(book11, booksUrl + "/2024");
         assertHttpStatus(result, HttpStatus.OK);
         assertThat(getResultObject(result, BookDto.class), equalToObject(book11));
     }

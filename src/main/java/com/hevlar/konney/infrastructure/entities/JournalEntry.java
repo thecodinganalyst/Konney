@@ -19,7 +19,7 @@ public class JournalEntry implements IJournalEntry {
     @GeneratedValue
     Long entryId;
     @NonNull
-    @OneToOne(optional = false)
+    @ManyToOne(optional = false)
     @JoinColumn
     Account account;
     @NonNull
