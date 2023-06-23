@@ -163,12 +163,28 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         MvcResult postResult = post(journalDto2022, generateJournalsUrl("J2022"));
         JournalDto postedJournalDto = (JournalDto) getResultObject(postResult, JournalDto.class);
 
-        MvcResult getResult = get(generateJournalsUrl("J2022", postedJournalDto.getJournalId().toString()));
+        MvcResult getResult = get(generateJournalsUrl("J2022", postedJournalDto.getJournalId()));
         assertHttpStatus(getResult, HttpStatus.OK);
         JournalDto getJournalDto = (JournalDto) getResultObject(getResult, JournalDto.class);
 
         assertThat(getJournalDto, is(postedJournalDto));
     }
+
+    @Test
+    void update_givenValidJournal_willReturnJournal() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 3), "test again", LocalDate.of(2022, 3, 3), cashId, new BigDecimal("20.00"), foodExpenseId, new BigDecimal("20.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.OK);
+        JournalDto updatedJournal = (JournalDto) getResultObject(updateResult, JournalDto.class);
+
+        assertThat(updatedJournal, is(journalUpdate));
+    }
+
 
 
     private JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, AccountDto creditAccount, BigDecimal amount){

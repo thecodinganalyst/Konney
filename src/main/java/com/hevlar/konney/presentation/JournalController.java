@@ -20,7 +20,7 @@ public class JournalController extends ValidationController{
         this.service = service;
     }
 
-    @PatchMapping("/{journalId}")
+    @PutMapping("/{journalId}")
     public JournalDto update(@PathVariable("label") String label, @PathVariable("journalId") Long journalId, @RequestBody @Valid JournalDto journalDto){
         try{
             Journal journal = service.updateJournal(label, journalId, journalDto.toJournal());

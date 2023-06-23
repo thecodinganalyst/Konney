@@ -26,7 +26,7 @@ public class Journal implements IJournal {
     String description;
 
     @Builder.Default
-    @OneToMany(mappedBy = "journal", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "journal", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     List<JournalEntry> entries = new ArrayList<>();
 
     @ManyToOne

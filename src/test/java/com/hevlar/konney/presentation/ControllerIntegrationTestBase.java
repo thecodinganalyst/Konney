@@ -79,8 +79,8 @@ public class ControllerIntegrationTestBase {
         return booksUrl + "/" + label + accountsUrl;
     }
 
-    protected String generateJournalsUrl(String label, String journalId){
-        return booksUrl + "/" + label + journalsUrl + "/" + journalId;
+    protected String generateJournalsUrl(String label, Long journalId){
+        return booksUrl + "/" + label + journalsUrl + "/" + journalId.toString();
     }
 
     protected String generateJournalsUrl(String label){

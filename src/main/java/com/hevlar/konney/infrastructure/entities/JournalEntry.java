@@ -27,7 +27,7 @@ public class JournalEntry implements IJournalEntry {
     @NonNull
     EntryType entryType;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn
     @ToString.Exclude
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "journalId", scope = Journal.class)

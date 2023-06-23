@@ -12,6 +12,7 @@ import com.hevlar.konney.infrastructure.repositories.JournalRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -141,7 +142,11 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
         savedJournal.setDescription(journal.getDescription());
         savedJournal.setTxDate(journal.getTxDate());
         savedJournal.setPostDate(journal.getPostDate());
-        savedJournal.setEntries(journal.getEntries());
+        savedJournal.getEntries().clear();
+
+        List<JournalEntry> updatedEntries = new ArrayList<>(journal.getEntries());
+        updatedEntries.forEach(je -> je.setJournal(savedJournal));
+        savedJournal.getEntries().addAll(updatedEntries);
 
         return journalRepository.save(savedJournal);
     }
