@@ -185,6 +185,25 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         assertThat(updatedJournal, is(journalUpdate));
     }
 
+    @Test
+    void update_givenBookNotFound_willReturnNotFound() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 3), "test again", LocalDate.of(2022, 3, 3), cashId, new BigDecimal("20.00"), foodExpenseId, new BigDecimal("20.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J1234", insertedJournal.getJournalId()));
+        assertHttpStatus(updateResult, HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void update_givenJournalNotFound_willReturnNotFound() throws Exception {
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 3), "test again", LocalDate.of(2022, 3, 3), cashId, new BigDecimal("20.00"), foodExpenseId, new BigDecimal("20.00"));
+        MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", 1234567890L));
+        assertHttpStatus(updateResult, HttpStatus.NOT_FOUND);
+    }
 
 
     private JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, AccountDto creditAccount, BigDecimal amount){
