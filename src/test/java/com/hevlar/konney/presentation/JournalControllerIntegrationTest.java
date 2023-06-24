@@ -29,16 +29,14 @@ import static org.hamcrest.Matchers.*;
 @ExtendWith(SpringExtension.class)
 public class JournalControllerIntegrationTest extends ControllerIntegrationTestBase{
 
-    String booksUrl = "/books";
-    String accountsUrl = "/accounts";
-
     AccountDto cashId = AccountDto.builder().accountId("JCASH").build();
     AccountDto foodExpenseId = AccountDto.builder().accountId("JFOOD").build();
-    AccountDto bankId = AccountDto.builder().accountId("JBANK").build();
+
+    BookDto book2022;
 
     @BeforeEach
     void setUp() throws Exception {
-        BookDto book2022 = BookDto.builder()
+        book2022 = BookDto.builder()
                 .label("J2022")
                 .startDate(LocalDate.of(2022, 1, 1))
                 .endDate(LocalDate.of(2022, 12, 31))
@@ -80,8 +78,6 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
                 .accountGroup(AccountGroup.Expense)
                 .build();
         postIfNotExist(foodExpense, generateAccountsUrl("J2022"), generateAccountsUrl("J2022", "JFOOD"));
-
-
     }
 
     @Test
@@ -140,9 +136,10 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
 
     @Test
     void create_givenJournalWithUnbalancedEntries_willReturnBadRequest() throws Exception {
-        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), foodExpenseId, new BigDecimal("11.00"), cashId, new BigDecimal("10.00"));
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, new BigDecimal("11.00"), cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertThat(result.getResponse().getErrorMessage(), is("Debit amount does not tally with credit amount"));
     }
 
     @Test
@@ -274,9 +271,61 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         assertHttpStatus(result, HttpStatus.CREATED);
         JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
 
-        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), foodExpenseId, new BigDecimal("11.00"), cashId, new BigDecimal("10.00"));
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, new BigDecimal("11.00"), cashId, new BigDecimal("10.00"));
         MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
         assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
+        assertThat(updateResult.getResponse().getErrorMessage(), is("Debit amount does not tally with credit amount"));
+    }
+
+    @Test
+    void delete_givenJournalAfterBookCloseDate_willDeleteJournal() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        MvcResult deleteResult = delete(generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(deleteResult, HttpStatus.OK);
+    }
+
+    @Test
+    void delete_givenJournalWithInvalidBook_willReturnNotFound() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        MvcResult deleteResult = delete(generateJournalsUrl("J1234", insertedJournal.getJournalId()));
+        assertHttpStatus(deleteResult, HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void delete_givenInvalidJournal_willReturnNotFound() throws Exception {
+        MvcResult deleteResult = delete(generateJournalsUrl("J2022", 1234L));
+        assertHttpStatus(deleteResult, HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void delete_givenJournalWithDateBeforeBookCloseDate_willReturnBadRequest() throws Exception {
+        JournalDto journalDtoTxDateBeforeBookClose = createJournal(LocalDate.of(2022, 2, 1), "test", LocalDate.of(2022, 2, 3), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDtoTxDateBeforeBookClose, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        journalDtoTxDateBeforeBookClose = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalDtoPostDateBeforeBookClose = createJournal(LocalDate.of(2022, 2, 3), "test", LocalDate.of(2022, 2, 1), foodExpenseId, cashId, new BigDecimal("10.00"));
+        result = post(journalDtoPostDateBeforeBookClose, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        journalDtoPostDateBeforeBookClose = (JournalDto) getResultObject(result, JournalDto.class);
+
+        book2022.setCloseUntilDate(LocalDate.of(2022, 2, 2));
+        result = put(book2022, booksUrl + "/J2022");
+        assertHttpStatus(result, HttpStatus.OK);
+
+        MvcResult deleteResult = delete(generateJournalsUrl("J2022", journalDtoTxDateBeforeBookClose.getJournalId()));
+        assertHttpStatus(deleteResult, HttpStatus.BAD_REQUEST);
+
+        deleteResult = delete(generateJournalsUrl("J2022", journalDtoPostDateBeforeBookClose.getJournalId()));
+        assertHttpStatus(deleteResult, HttpStatus.BAD_REQUEST);
     }
 
     private JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, AccountDto creditAccount, BigDecimal amount){

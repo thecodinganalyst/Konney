@@ -58,6 +58,10 @@ public class ControllerIntegrationTestBase {
                 .andReturn();
     }
 
+    protected MvcResult delete(String url) throws Exception {
+        return mvc.perform(MockMvcRequestBuilders.delete(url)).andReturn();
+    }
+
     protected void assertHttpStatus(MvcResult result, HttpStatus status){
         assertThat(result.getResponse().getStatus(), is(status.value()));
     }

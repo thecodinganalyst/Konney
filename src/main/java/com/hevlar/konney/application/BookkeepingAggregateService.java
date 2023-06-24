@@ -50,7 +50,20 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
 
     public Book updateBook(String label, Book book) throws BookkeepingException {
         Book savedBook = bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
-        if(accountRepository.existsByBookLabel(label)) throw new BookkeepingException("Cannot update book when accounts exists");
+        if(!book.getStartDate().isEqual(savedBook.getStartDate())){
+            if(accountRepository.existsByOpeningDateBeforeAndBookLabel(book.getStartDate(), book.getLabel()))
+                throw new BookkeepingException("Cannot modify book start date as there are accounts with opening date before book start date");
+            if(journalRepository.existsByBookLabelAndTxDateBeforeOrPostDateBefore(book.getLabel(), book.getStartDate(), book.getStartDate()))
+                throw new BookkeepingException("Cannot modify book start date as there are journals with transaction date or post date before book start date");
+        }
+
+        if(!book.getEndDate().isEqual(savedBook.getEndDate())){
+            if(accountRepository.existsByOpeningDateAfterAndBookLabel(book.getEndDate(), book.getLabel()))
+                throw new BookkeepingException("Cannot modify book end date as there are accounts with opening date after book end date");
+            if(journalRepository.existsByBookLabelAndTxDateAfterOrPostDateAfter(book.getLabel(), book.getEndDate(), book.getEndDate()))
+                throw new BookkeepingException("Cannot modify book end date as there are journals with transaction date or post date after book end date");
+        }
+
         validateBook(book);
         savedBook.setStartDate(book.getStartDate());
         savedBook.setEndDate(book.getEndDate());

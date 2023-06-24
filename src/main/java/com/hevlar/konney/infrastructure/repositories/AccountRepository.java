@@ -4,6 +4,7 @@ import com.hevlar.konney.infrastructure.entities.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +14,6 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     List<Account> findAllByBookLabel(String label);
     Optional<Account> findByAccountIdAndBookLabel(String accountId, String label);
     List<Account> findAllByAccountIdInAndBookLabel(List<String> accountIds, String label);
+    boolean existsByOpeningDateBeforeAndBookLabel(LocalDate date, String label);
+    boolean existsByOpeningDateAfterAndBookLabel(LocalDate date, String label);
 }
