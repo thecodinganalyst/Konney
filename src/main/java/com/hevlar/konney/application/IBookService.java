@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface IBookService {
     List<Book> listBooks();
-    Book getBook(String label) throws BookkeepingException;
+    Book getBook(String label) throws BookkeepingNotFoundException;
     Book createBook(@Valid Book book) throws BookkeepingException;
     Book updateBook(String label, Book book) throws BookkeepingException;
     void deleteBook(String label) throws BookkeepingException;

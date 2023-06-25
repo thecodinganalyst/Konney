@@ -61,8 +61,6 @@ public class AccountController extends ValidationController{
             return AccountDto.fromAccount(retrieved);
         }catch(BookkeepingNotFoundException ex){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
-        }catch (BookkeepingException ex){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
 }

@@ -38,7 +38,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
         return bookRepository.findAll();
     }
 
-    public Book getBook(String label) throws BookkeepingException {
+    public Book getBook(String label) throws BookkeepingNotFoundException {
         return bookRepository.findById(label).orElseThrow(() -> new BookkeepingNotFoundException("Book not found"));
     }
 
@@ -83,7 +83,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     }
 
     @Override
-    public Account getAccount(String label, String accountId) throws BookkeepingException {
+    public Account getAccount(String label, String accountId) throws BookkeepingNotFoundException {
         return accountRepository.findByAccountIdAndBookLabel(accountId, label).orElseThrow(() -> new BookkeepingNotFoundException("Account not found"));
     }
 

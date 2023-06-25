@@ -68,8 +68,6 @@ public class BookController extends ValidationController{
             return BookDto.fromBook(book);
         }catch(BookkeepingNotFoundException ex){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
-        }catch (BookkeepingException ex){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
 }
