@@ -2,6 +2,10 @@ package com.hevlar.konney.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.hevlar.konney.domain.valueobjects.EntryType;
+import com.hevlar.konney.presentation.dto.AccountDto;
+import com.hevlar.konney.presentation.dto.JournalDto;
+import com.hevlar.konney.presentation.dto.JournalEntryDto;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,6 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,6 +72,10 @@ public class ControllerIntegrationTestBase {
         assertThat(result.getResponse().getStatus(), is(status.value()));
     }
 
+    protected void assertHttpMessage(MvcResult result, String expectedMessage){
+        assertThat(result.getResponse().getErrorMessage(), is(expectedMessage));
+    }
+
     protected Object getResultObject(MvcResult result, Class<?> classRef ) throws Exception {
         return objectMapper.readValue(result.getResponse().getContentAsString(), classRef);
     }
@@ -89,6 +99,29 @@ public class ControllerIntegrationTestBase {
 
     protected String generateJournalsUrl(String label){
         return booksUrl + "/" + label + journalsUrl;
+    }
+
+    protected JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, AccountDto creditAccount, BigDecimal amount){
+        return createJournal(txDate, desc, postDate, debitAccount, amount, creditAccount, amount);
+    }
+
+    protected JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, BigDecimal debitAmount, AccountDto creditAccount, BigDecimal creditAmount){
+        JournalEntryDto debit = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(debitAccount.getAccountId())
+                .amount(debitAmount)
+                .build();
+        JournalEntryDto credit = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(creditAccount.getAccountId())
+                .amount(creditAmount)
+                .build();
+        return JournalDto.builder()
+                .txDate(txDate)
+                .postDate(postDate)
+                .description(desc)
+                .entries(List.of(debit, credit))
+                .build();
     }
 
 }

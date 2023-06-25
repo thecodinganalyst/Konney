@@ -53,8 +53,8 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
         if(!book.getStartDate().isEqual(savedBook.getStartDate())){
             if(accountRepository.existsByOpeningDateBeforeAndBookLabel(book.getStartDate(), book.getLabel()))
                 throw new BookkeepingException("Cannot modify book start date as there are accounts with opening date before book start date");
-            if(journalRepository.existsByBookLabelAndTxDateBeforeOrPostDateBefore(book.getLabel(), book.getStartDate(), book.getStartDate()))
-                throw new BookkeepingException("Cannot modify book start date as there are journals with transaction date or post date before book start date");
+//            if(journalRepository.existsByBookLabelAndTxDateBeforeOrPostDateBefore(book.getLabel(), book.getStartDate(), book.getStartDate()))
+//                throw new BookkeepingException("Cannot modify book start date as there are journals with transaction date or post date before book start date");
         }
 
         if(!book.getEndDate().isEqual(savedBook.getEndDate())){
@@ -72,7 +72,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     }
 
     public void deleteBook(String label) throws BookkeepingException {
-        if(bookRepository.existsById(label)) throw new BookkeepingNotFoundException("Book not found");
+        if(!bookRepository.existsById(label)) throw new BookkeepingNotFoundException("Book not found");
         if(accountRepository.existsByBookLabel(label)) throw new BookkeepingException("Cannot delete book when accounts exists");
         bookRepository.deleteById(label);
     }

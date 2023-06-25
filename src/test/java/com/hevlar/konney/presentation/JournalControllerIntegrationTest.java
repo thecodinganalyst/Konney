@@ -1,11 +1,9 @@
 package com.hevlar.konney.presentation;
 
 import com.hevlar.konney.domain.valueobjects.AccountGroup;
-import com.hevlar.konney.domain.valueobjects.EntryType;
 import com.hevlar.konney.presentation.dto.AccountDto;
 import com.hevlar.konney.presentation.dto.BookDto;
 import com.hevlar.konney.presentation.dto.JournalDto;
-import com.hevlar.konney.presentation.dto.JournalEntryDto;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -328,26 +326,4 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         assertHttpStatus(deleteResult, HttpStatus.BAD_REQUEST);
     }
 
-    private JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, AccountDto creditAccount, BigDecimal amount){
-        return createJournal(txDate, desc, postDate, debitAccount, amount, creditAccount, amount);
-    }
-
-    private JournalDto createJournal(LocalDate txDate, String desc, LocalDate postDate, AccountDto debitAccount, BigDecimal debitAmount, AccountDto creditAccount, BigDecimal creditAmount){
-        JournalEntryDto debit = JournalEntryDto.builder()
-                .entryType(EntryType.Debit)
-                .accountId(debitAccount.getAccountId())
-                .amount(debitAmount)
-                .build();
-        JournalEntryDto credit = JournalEntryDto.builder()
-                .entryType(EntryType.Credit)
-                .accountId(creditAccount.getAccountId())
-                .amount(creditAmount)
-                .build();
-        return JournalDto.builder()
-                .txDate(txDate)
-                .postDate(postDate)
-                .description(desc)
-                .entries(List.of(debit, credit))
-                .build();
-    }
 }

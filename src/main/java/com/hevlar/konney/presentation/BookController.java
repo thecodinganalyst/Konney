@@ -33,6 +33,17 @@ public class BookController extends ValidationController{
         }
     }
 
+    @DeleteMapping("/{label}")
+    public void delete(@PathVariable("label") String label){
+        try {
+            service.deleteBook(label);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }catch (BookkeepingException ex){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BookDto create(@RequestBody @Valid BookDto bookDto){
