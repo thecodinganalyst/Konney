@@ -1,9 +1,11 @@
 package com.hevlar.konney.presentation;
 
 import com.hevlar.konney.domain.valueobjects.AccountGroup;
+import com.hevlar.konney.domain.valueobjects.EntryType;
 import com.hevlar.konney.presentation.dto.AccountDto;
 import com.hevlar.konney.presentation.dto.BookDto;
 import com.hevlar.konney.presentation.dto.JournalDto;
+import com.hevlar.konney.presentation.dto.JournalEntryDto;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,6 +31,9 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
 
     AccountDto cashId = AccountDto.builder().accountId("JCASH").build();
     AccountDto foodExpenseId = AccountDto.builder().accountId("JFOOD").build();
+    AccountDto bankId = AccountDto.builder().accountId("JBANK").build();
+    AccountDto usdBankId = AccountDto.builder().accountId("JUSDBANK").build();
+    AccountDto transportExpenseId = AccountDto.builder().accountId("JTRANSPORT").build();
 
     BookDto book2022;
 
@@ -76,6 +81,23 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
                 .accountGroup(AccountGroup.Expense)
                 .build();
         postIfNotExist(foodExpense, generateAccountsUrl("J2022"), generateAccountsUrl("J2022", "JFOOD"));
+
+        AccountDto transportExpense = AccountDto.builder()
+                .accountId("JTRANSPORT")
+                .accountName("Transport")
+                .accountGroup(AccountGroup.Expense)
+                .build();
+        postIfNotExist(transportExpense, generateAccountsUrl("J2022"), generateAccountsUrl("J2022", "JTRANSPORT"));
+
+        AccountDto usdBank = AccountDto.builder()
+                .accountId("JUSDBANK")
+                .accountName("JUsdBank")
+                .accountGroup(AccountGroup.CurrentAsset)
+                .openingBalance(new BigDecimal("1000.00"))
+                .currency("USD")
+                .openingDate(LocalDate.of(2022, 1, 1))
+                .build();
+        postIfNotExist(usdBank, generateAccountsUrl("J2022"), generateAccountsUrl("J2022", "JUSDBANK"));
     }
 
     @Test
@@ -92,6 +114,7 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto journalDto = createJournal(LocalDate.of(2022, 1, 2), "test", LocalDate.of(2022, 1, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("1234"));
         assertHttpStatus(result, HttpStatus.NOT_FOUND);
+        assertHttpMessage(result, "Book not found");
     }
 
     @ParameterizedTest
@@ -100,6 +123,12 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto journalDto = createJournal(txDate, "test", LocalDate.of(2022, 3, 1), foodExpenseId, cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        if(txDate.isBefore(book2022.getStartDate())){
+            assertHttpMessage(result, "Journal transaction date cannot be before book start date");
+        }
+        if(txDate.isAfter(book2022.getEndDate())){
+            assertHttpMessage(result, "Journal transaction date cannot be after book end date");
+        }
     }
 
     @ParameterizedTest
@@ -108,6 +137,13 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 1), "test", postDate, foodExpenseId, cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+
+        if(postDate.isBefore(book2022.getStartDate())){
+            assertHttpMessage(result, "Journal post date cannot be before book start date");
+        }
+        if(postDate.isAfter(book2022.getEndDate())){
+            assertHttpMessage(result, "Journal post date cannot be after book end date");
+        }
     }
 
     @Test
@@ -115,6 +151,7 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto journalDto = createJournal(LocalDate.of(2022, 1, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Journal transaction date is before book close date");
     }
 
     @Test
@@ -122,14 +159,16 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Journal post date is before book close date");
     }
 
     @Test
     void create_givenJournalWithInvalidAccount_willReturnBadRequest() throws Exception {
         AccountDto invalid = AccountDto.builder().accountId("1234").build();
-        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 1, 2), invalid, cashId, new BigDecimal("10.00"));
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), invalid, cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Accounts [1234] not found");
     }
 
     @Test
@@ -137,7 +176,85 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, new BigDecimal("11.00"), cashId, new BigDecimal("10.00"));
         MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
         assertHttpStatus(result, HttpStatus.BAD_REQUEST);
-        assertThat(result.getResponse().getErrorMessage(), is("Debit amount does not tally with credit amount"));
+        assertHttpMessage(result, "Debit amount does not tally with credit amount");
+    }
+
+    @Test
+    void create_givenJournalWithUnbalancedEntriesButDifferentCurrency_willReturnJournal() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), cashId, new BigDecimal("11.00"), usdBankId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto savedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+        assertThat(savedJournal, is(journalDto));
+    }
+
+    @Test
+    void create_givenJournalWithMultipleEntriesOfSameCurrency_willReturnJournal() throws Exception {
+        JournalEntryDto entryDto1 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(bankId.getAccountId())
+                .amount(new BigDecimal("40.00"))
+                .build();
+        JournalEntryDto entryDto2 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(cashId.getAccountId())
+                .amount(new BigDecimal("10.00"))
+                .build();
+        JournalEntryDto entryDto3 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(foodExpenseId.getAccountId())
+                .amount(new BigDecimal("30.00"))
+                .build();
+        JournalEntryDto entryDto4 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(transportExpenseId.getAccountId())
+                .amount(new BigDecimal("20.00"))
+                .build();
+        JournalDto journalDto = JournalDto.builder()
+                .txDate(LocalDate.of(2022, 4, 1))
+                .description("test")
+                .postDate(LocalDate.of(2022, 4, 2))
+                .entries(List.of(entryDto1, entryDto2, entryDto3, entryDto4))
+                .build();
+
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto savedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+        assertThat(savedJournal, is(journalDto));
+    }
+
+    @Test
+    void create_givenJournalWithMultipleEntriesOfSameCurrencyButNotBalance_willReturnBadRequest() throws Exception {
+        JournalEntryDto entryDto1 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(bankId.getAccountId())
+                .amount(new BigDecimal("40.00"))
+                .build();
+        JournalEntryDto entryDto2 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(cashId.getAccountId())
+                .amount(new BigDecimal("10.00"))
+                .build();
+        JournalEntryDto entryDto3 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(foodExpenseId.getAccountId())
+                .amount(new BigDecimal("30.00"))
+                .build();
+        JournalEntryDto entryDto4 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(transportExpenseId.getAccountId())
+                .amount(new BigDecimal("30.00"))
+                .build();
+        JournalDto journalDto = JournalDto.builder()
+                .txDate(LocalDate.of(2022, 4, 1))
+                .description("test")
+                .postDate(LocalDate.of(2022, 4, 2))
+                .entries(List.of(entryDto1, entryDto2, entryDto3, entryDto4))
+                .build();
+
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Debit amount does not tally with credit amount");
     }
 
     @Test
@@ -163,6 +280,24 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         JournalDto getJournalDto = (JournalDto) getResultObject(getResult, JournalDto.class);
 
         assertThat(getJournalDto, is(postedJournalDto));
+    }
+
+    @Test
+    void get_givenInvalidBook_willReturnNotFound() throws Exception {
+        JournalDto journalDto2022 = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("100.00"));
+        MvcResult postResult = post(journalDto2022, generateJournalsUrl("J2022"));
+        JournalDto postedJournalDto = (JournalDto) getResultObject(postResult, JournalDto.class);
+
+        MvcResult getResult = get(generateJournalsUrl("J1234", postedJournalDto.getJournalId()));
+        assertHttpStatus(getResult, HttpStatus.NOT_FOUND);
+        assertHttpMessage(getResult, "Journal not found");
+    }
+
+    @Test
+    void get_givenInvalidJournal_willReturnNotFound() throws Exception {
+        MvcResult getResult = get(generateJournalsUrl("J2022", 1234L));
+        assertHttpStatus(getResult, HttpStatus.NOT_FOUND);
+        assertHttpMessage(getResult, "Journal not found");
     }
 
     @Test
@@ -273,6 +408,99 @@ public class JournalControllerIntegrationTest extends ControllerIntegrationTestB
         MvcResult updateResult = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
         assertHttpStatus(updateResult, HttpStatus.BAD_REQUEST);
         assertThat(updateResult.getResponse().getErrorMessage(), is("Debit amount does not tally with credit amount"));
+    }
+
+    @Test
+    void update_givenJournalWithUnbalancedEntriesButDifferentCurrency_willReturnJournal() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalDto journalUpdate = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), cashId, new BigDecimal("11.00"), usdBankId, new BigDecimal("10.00"));
+        result = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(result, HttpStatus.OK);
+        JournalDto savedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+        assertThat(savedJournal, is(journalUpdate));
+    }
+
+    @Test
+    void update_givenJournalWithMultipleEntriesOfSameCurrency_willReturnJournal() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalEntryDto entryDto1 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(bankId.getAccountId())
+                .amount(new BigDecimal("40.00"))
+                .build();
+        JournalEntryDto entryDto2 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(cashId.getAccountId())
+                .amount(new BigDecimal("10.00"))
+                .build();
+        JournalEntryDto entryDto3 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(foodExpenseId.getAccountId())
+                .amount(new BigDecimal("20.00"))
+                .build();
+        JournalEntryDto entryDto4 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(transportExpenseId.getAccountId())
+                .amount(new BigDecimal("30.00"))
+                .build();
+        JournalDto journalUpdate = JournalDto.builder()
+                .txDate(LocalDate.of(2022, 4, 1))
+                .description("test")
+                .postDate(LocalDate.of(2022, 4, 2))
+                .entries(List.of(entryDto1, entryDto2, entryDto3, entryDto4))
+                .build();
+
+        result = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(result, HttpStatus.OK);
+        JournalDto savedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+        assertThat(savedJournal, is(journalUpdate));
+    }
+
+    @Test
+    void update_givenJournalWithMultipleEntriesOfSameCurrencyButNotBalance_willReturnBadRequest() throws Exception {
+        JournalDto journalDto = createJournal(LocalDate.of(2022, 3, 2), "test", LocalDate.of(2022, 3, 2), foodExpenseId, cashId, new BigDecimal("10.00"));
+        MvcResult result = post(journalDto, generateJournalsUrl("J2022"));
+        assertHttpStatus(result, HttpStatus.CREATED);
+        JournalDto insertedJournal = (JournalDto) getResultObject(result, JournalDto.class);
+
+        JournalEntryDto entryDto1 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(bankId.getAccountId())
+                .amount(new BigDecimal("40.00"))
+                .build();
+        JournalEntryDto entryDto2 = JournalEntryDto.builder()
+                .entryType(EntryType.Credit)
+                .accountId(cashId.getAccountId())
+                .amount(new BigDecimal("10.00"))
+                .build();
+        JournalEntryDto entryDto3 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(foodExpenseId.getAccountId())
+                .amount(new BigDecimal("30.00"))
+                .build();
+        JournalEntryDto entryDto4 = JournalEntryDto.builder()
+                .entryType(EntryType.Debit)
+                .accountId(transportExpenseId.getAccountId())
+                .amount(new BigDecimal("30.00"))
+                .build();
+        JournalDto journalUpdate = JournalDto.builder()
+                .txDate(LocalDate.of(2022, 4, 1))
+                .description("test")
+                .postDate(LocalDate.of(2022, 4, 2))
+                .entries(List.of(entryDto1, entryDto2, entryDto3, entryDto4))
+                .build();
+
+        result = put(journalUpdate, generateJournalsUrl("J2022", insertedJournal.getJournalId()));
+        assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Debit amount does not tally with credit amount");
     }
 
     @Test

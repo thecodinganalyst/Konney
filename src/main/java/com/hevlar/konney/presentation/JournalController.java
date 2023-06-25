@@ -58,8 +58,6 @@ public class JournalController extends ValidationController{
             return JournalDto.fromJournal(journal);
         }catch(BookkeepingNotFoundException ex){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
-        }catch (BookkeepingException ex){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
     }
 

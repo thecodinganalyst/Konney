@@ -15,6 +15,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class BookkeepingAggregateService implements IBookService, IAccountService, IJournalService {
@@ -134,7 +136,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
     }
 
     @Override
-    public Journal getJournal(String label, Long journalId) throws BookkeepingException {
+    public Journal getJournal(String label, Long journalId) throws BookkeepingNotFoundException {
         return journalRepository.findByJournalIdAndBookLabel(journalId, label).orElseThrow(() -> new BookkeepingNotFoundException("Journal not found"));
     }
 
@@ -188,31 +190,37 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
         if(journal.getTxDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Journal transaction date is before book close date");
         if(journal.getPostDate().isBefore(book.getCloseUntilDate())) throw new BookkeepingException("Journal post date is before book close date");
 
+        List<String> accountIdList = journal.getEntries().stream().map(JournalEntry::getAccountId).toList();
+        List<Account> savedAccountList = accountRepository.findAllByAccountIdInAndBookLabel(accountIdList, book.getLabel());
+
         // ensure all accounts in the entries are valid
-        validateJournalAccounts(journal, book);
+        validateJournalAccounts(journal, savedAccountList);
 
         // ensure the debit amount and credit amount balances if they are the same currency
-        validateJournalBalance(journal);
+        validateJournalBalance(journal, savedAccountList);
     }
 
-    private void validateJournalAccounts(Journal journal, Book book) throws BookkeepingException {
-        List<String> accountList = journal.getEntries().stream().map(JournalEntry::getAccountId).toList();
+    private void validateJournalAccounts(Journal journal, List<Account> accountList) throws BookkeepingException {
+        List<String> journalAccountIdList = journal.getEntries().stream().map(JournalEntry::getAccountId).toList();
 
-        List<String> resultAccountList = accountRepository.findAllByAccountIdInAndBookLabel(accountList, book.getLabel())
+        List<String> savedAccountList = accountList
                 .stream()
                 .map(Account::getAccountId)
                 .toList();
-        List<String> unmatchedAccountList = accountList.stream()
-                .filter(account -> !resultAccountList.contains(account))
+        List<String> unmatchedAccountList = journalAccountIdList.stream()
+                .filter(account -> !savedAccountList.contains(account))
                 .toList();
         if(unmatchedAccountList.size() > 0){
             throw new BookkeepingException("Accounts " + unmatchedAccountList + " not found");
         }
     }
 
-    private void validateJournalBalance(Journal journal) throws BookkeepingException {
-        String currencyFirst = journal.getEntries().get(0).getCurrency();
-        boolean sameCurrency = journal.getEntries().stream().allMatch(entry -> Objects.equals(entry.getCurrency(), currencyFirst));
+    private void validateJournalBalance(Journal journal, List<Account> savedAccountList) throws BookkeepingException {
+        Set<String> currencySetFromSavedAccountList = savedAccountList.stream()
+                .map(Account::getCurrency)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        boolean sameCurrency = currencySetFromSavedAccountList.size() == 1;
         if(sameCurrency){
             BigDecimal debitTotal = journal.getDebitEntries()
                     .stream()
@@ -224,7 +232,7 @@ public class BookkeepingAggregateService implements IBookService, IAccountServic
                     .map(IJournalEntry::getAmount)
                     .reduce((acc, item) -> BigDecimal.valueOf(acc.doubleValue() + item.doubleValue()))
                     .orElse(BigDecimal.ZERO);
-            if(!debitTotal.equals(creditTotal)){
+            if(debitTotal.compareTo(creditTotal) != 0){
                 throw new BookkeepingException("Debit amount does not tally with credit amount");
             }
         }
