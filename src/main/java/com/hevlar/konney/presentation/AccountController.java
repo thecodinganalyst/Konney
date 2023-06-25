@@ -63,4 +63,15 @@ public class AccountController extends ValidationController{
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
         }
     }
+
+    @DeleteMapping("/{accountId}")
+    public void delete(@PathVariable("label") String label, @PathVariable("accountId") String accountId){
+        try{
+            service.deleteAccount(label, accountId);
+        }catch(BookkeepingNotFoundException ex){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        } catch (BookkeepingException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
 }

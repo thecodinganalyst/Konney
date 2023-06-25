@@ -228,6 +228,36 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
 
     @Test
     @Order(14)
+    void update_givenBookWithCloseUntilDateBeforeStartDate_willReturnBadRequest() throws Exception {
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        BookDto invalid = new BookDto(
+                "2023",
+                LocalDate.of(2023, 1, 1),
+                LocalDate.of(2023, 12, 31),
+                LocalDate.of(2022, 1, 1));
+
+        MvcResult result = put(invalid, booksUrl + "/" + book2023.getLabel());
+        assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Close until date cannot be before book start date");
+    }
+
+    @Test
+    @Order(15)
+    void update_givenBookWithCloseUntilDateAfterEndDate_willReturnBadRequest() throws Exception {
+        postIfNotExist(book2023, booksUrl, booksUrl + "/" + book2023.getLabel());
+        BookDto invalid = new BookDto(
+                "2023",
+                LocalDate.of(2023, 1, 1),
+                LocalDate.of(2023, 12, 31),
+                LocalDate.of(2024, 1, 1));
+
+        MvcResult result = put(invalid, booksUrl + "/" + book2023.getLabel());
+        assertHttpStatus(result, HttpStatus.BAD_REQUEST);
+        assertHttpMessage(result, "Close until date cannot be after book end date");
+    }
+
+    @Test
+    @Order(16)
     void update_givenBookWithAccountBeforeBookStartDate_willReturnBadRequest() throws Exception {
         BookDto bookWithAccountBeforeStartDate = BookDto.builder()
                 .label("bookWithAccountBeforeStartDate")
@@ -257,7 +287,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     }
 
     @Test
-    @Order(15)
+    @Order(17)
     void update_givenBookWithAccountAfterBookEndDate_willReturnBadRequest() throws Exception {
         BookDto bookWithAccountAfterEndDate = BookDto.builder()
                 .label("bookWithAccountAfterEndDate")
@@ -287,7 +317,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     }
 
     @Test
-    @Order(16)
+    @Order(18)
     void update_givenBookWithJournalTxDateAfterBookEndDate_willReturnBadRequest() throws Exception {
         BookDto bookWithJournalTxDateAfterEndDate = BookDto.builder()
                 .label("bookWithJournalTxDateAfterEndDate")
@@ -329,7 +359,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     }
 
     @Test
-    @Order(17)
+    @Order(19)
     void delete_givenBookExistsWithoutAccounts_willReturnOK() throws Exception {
         BookDto bookToDelete = BookDto.builder()
                 .label("2999")
@@ -345,7 +375,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     }
 
     @Test
-    @Order(18)
+    @Order(20)
     void delete_givenBookDoesNotExists_willReturnNotFound() throws Exception {
         MvcResult result = delete(booksUrl + "/1234");
         assertHttpStatus(result, HttpStatus.NOT_FOUND);
@@ -353,7 +383,7 @@ class BookControllerIntegrationTest extends ControllerIntegrationTestBase {
     }
 
     @Test
-    @Order(19)
+    @Order(21)
     void delete_givenBookWithAccount_willReturnBadRequest() throws Exception {
         BookDto bookWithAccount = BookDto.builder()
                 .label("bookWithAccount")
